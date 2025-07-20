@@ -31,6 +31,17 @@ def garantir_venv():
 
 garantir_venv()
 
+# Agora que estamos dentro do venv, podemos instalar o nbconvert com segurança
+try:
+    import nbconvert
+except ImportError:
+    print("[ERRO] nbconvert não está instalado. Tentando instalar...")
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "nbconvert"])
+    except Exception as install_error:
+        print(f"[ERRO] Falha ao instalar nbconvert: {install_error}")
+        sys.exit(1)
+
 # ---------------------------------------------------------------------------------------------------------------------
 
 PASTAS = ['doc', 'notebooks', 'scripts', 'pdf', 'info', 'log', 'functions', 'markdown', 'key']
@@ -117,6 +128,56 @@ def converte_to_md(arquivo_path, base_dir, logger):
     logger.info("[+] Criado: conversao.py")
 
 # ---------------------------------------------------------------------------------------------------------------------
+    upsert_key_gpt_code = '''\
+from pathlib import Path
+import os
+
+def upsert_key_gpt(base_dir: Path):
+    upsert_path = base_dir / "key"
+    file_path = upsert_path / "OPENAI_API_KEY.txt"
+
+    # Garante que o diretório seja criado com base no base_dir informado
+    os.makedirs(upsert_path, exist_ok=True)
+
+    get_key = input("Cole aqui o token da OpenAI: ")
+    with open(file_path, "w", encoding="utf-8") as file:
+        file.write(get_key)
+
+    print(f"Token salvo em '{file_path}'")
+    return get_key
+    '''
+    (functions_dir / "upsert_key_gpt.py").write_text(upsert_key_gpt_code, encoding="utf-8")
+    logger.info("[+] Criado: upsert_key_gpt.py")
+
+# ---------------------------------------------------------------------------------------------------------------------
+    crete_key_gpt_code = '''\
+from pathlib import Path
+import os
+
+def crete_key_gpt(base_dir: Path):
+    create_path = base_dir / "key"
+    file_path = create_path / "OPENAI_API_KEY.txt"
+
+    if os.path.exists(file_path):
+        print(f"O arquivo '{file_path}' já existe.")
+        with open(file_path, "r", encoding="utf-8") as f:
+            key = f.read().strip()
+        print("Token atual:\\n", key)
+        resp = input("Deseja alterar o token? (s/n): ").strip().lower()
+        if resp == 's':
+            from functions.upsert_key_gpt import upsert_key_gpt
+            return upsert_key_gpt(base_dir)
+        else:
+            print("Nenhuma alteração foi feita.")
+        return key
+    else:
+        from functions.upsert_key_gpt import upsert_key_gpt
+        return upsert_key_gpt(base_dir)
+    '''
+    (functions_dir / "crete_key_gpt.py").write_text(crete_key_gpt_code, encoding="utf-8")
+    logger.info("[+] Criado: crete_key_gpt.py")
+
+# ---------------------------------------------------------------------------------------------------------------------
 def criar_pastas(base_dir: Path):
     for pasta in PASTAS:
         dir_path = base_dir / pasta
@@ -129,41 +190,18 @@ def criar_pastas(base_dir: Path):
             logger.info(f"[=] Pasta já existe: {dir_path}")
 
 # ---------------------------------------------------------------------------------------------------------------------
-def upsert_key_gpt():
-    file_path = "key/OPENAI_API_KEY.txt"
-    get_key = input("Cole aqui o token da OpenAI: ")
-    os.makedirs("key", exist_ok=True)
-    with open(file_path, "w", encoding="utf-8") as file:
-        file.write(get_key)
-    print("Token salvo em 'key/OPENAI_API_KEY.txt'")
-    return get_key
-
-def crete_key_gpt():
-    file_path = "key/OPENAI_API_KEY.txt"
-    if os.path.exists(file_path):
-        print(f"O arquivo '{file_path}' já existe.")
-        with open(file_path, "r", encoding="utf-8") as f:
-            key = f.read().strip()
-        print("Token atual:\n", key)
-        resp = input("Deseja alterar o token? (s/n): ").strip().lower()
-        if resp == 's':
-            upsert_key_gpt()
-        else:
-            print("Nenhuma alteração foi feita.")
-        return key
-    else:
-        upsert_key_gpt()
-
-# ---------------------------------------------------------------------------------------------------------------------
 def main():
+    from pathlib import Path
+    import os
     base_dir = Path(__file__).resolve().parent
-    crete_key_gpt()
     criar_pastas(base_dir)
     sys.path.insert(0, str(base_dir / "functions"))
 
     from functions.log import configurar_logger
     from functions.estrutura import criar_pastas as criar_pastas_dinamico
     from functions.conversao import converte_to_md
+    from functions.upsert_key_gpt import upsert_key_gpt
+    from functions.crete_key_gpt import crete_key_gpt
 
     global logger
     logger = configurar_logger(base_dir)
@@ -200,24 +238,19 @@ def main():
     print()
     resposta = input("Deseja criar um arquivo Dit? (S/n): ").strip().lower()
     if resposta in ["s", "sim", ""]:
+        
+        # Criação do arquivo de chave da OpenAI
+        crete_key_gpt(base_dir)
+    
         dit_path = base_dir / "doc" / "notebooks.docx"
         with open(dit_path, "w", encoding="utf-8") as dit_file:
             for arquivo in notebooks:
                 dit_file.write(f"{arquivo.name}\n")
         logger.info(f"[+] Arquivo Dit criado: {dit_path}")
     else:
-        logger.info("[=] Criação do arquivo Dit cancelada.")    
+        logger.info("[=] Criação do arquivo Dit cancelada.")
+
 
 # ---------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
-    try:
-        import nbconvert
-    except ImportError:
-        print("[ERRO] nbconvert não está instalado. Tentando instalar...")
-        try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "nbconvert"])
-        except Exception as install_error:
-            print(f"[ERRO] Falha ao instalar nbconvert: {install_error}")
-            sys.exit(1)
-
     main()
