@@ -44,7 +44,7 @@ except ImportError:
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-PASTAS = ['doc', 'notebooks', 'scripts', 'pdf', 'info', 'log', 'functions', 'markdown', 'key']
+PASTAS = ['doc', 'notebooks', 'scripts', 'pdf', 'info', 'log', 'functions', 'markdown', 'key', 'packages']
 
 logger = logging.getLogger(__name__)
 
