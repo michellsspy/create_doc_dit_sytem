@@ -60,7 +60,8 @@ def installer_packages():
         "sentence-transformers==2.7.0",
         "langchain-chroma",
         "faiss-cpu",
-        "lark"
+        "lark",
+        "nbconvert"
         # ffmpeg e ffprobe não são pacotes pip
     ]
 
