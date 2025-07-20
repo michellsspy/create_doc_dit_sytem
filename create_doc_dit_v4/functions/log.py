@@ -6,7 +6,7 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 def configurar_logger(base_dir: Path):
-    log_dir = base_dir / ".log"
+    log_dir = base_dir / "log"
     log_dir.mkdir(parents=True, exist_ok=True)
 
     log_filename = datetime.now().strftime("%Y_%m_%d_%H_%M_%S") + ".log"

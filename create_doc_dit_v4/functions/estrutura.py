@@ -6,7 +6,7 @@ def criar_pastas(base_dir, pastas, logger):
             logger.info(f"[+] Criada pasta: {dir_path}")
         else:
             logger.info(f"[=] Pasta já existe: {dir_path}")
-        if pasta == ".functions":
+        if pasta == "functions":
             from pathlib import Path
             from main import criar_funcoes_padrao
             criar_funcoes_padrao(dir_path)
